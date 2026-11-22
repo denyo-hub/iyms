@@ -21,19 +21,19 @@
   --bad:#2e1616;--bad-ink:#ff8a80;--hi:#2c2512;--hi-line:#8a6d1f;--chip:#222730;}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
-header{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:calc(env(safe-area-inset-top) + 10px) 16px 8px}
+header{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:calc(env(safe-area-inset-top) + 10px) 16px 6px}
 h1{font-size:17px;margin:0 0 4px;font-weight:650;letter-spacing:-.01em}
 #status{font-size:13px;color:var(--muted);min-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #bar{height:3px;background:var(--line);border-radius:2px;margin-top:6px;overflow:hidden}
 #bar>i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
 #bar.busy>i{width:30%;animation:slide 1.1s linear infinite}
 @keyframes slide{from{margin-left:-30%}to{margin-left:100%}}
-main{padding:12px 16px calc(84px + env(safe-area-inset-bottom));max-width:760px;margin:0 auto}
+main{padding:12px 16px calc(40px + env(safe-area-inset-bottom));max-width:760px;margin:0 auto}
 section{display:none}section.on{display:block}
-nav{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;background:var(--panel);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
-nav button{flex:1;border:0;background:none;color:var(--muted);padding:10px 4px 8px;font:600 12px system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;gap:3px}
-nav button svg{width:22px;height:22px}
-nav button.on{color:var(--accent)}
+nav{display:flex;gap:4px;margin:10px -4px 0}
+nav button{flex:1;border:0;background:none;color:var(--muted);padding:7px 2px;border-radius:9px;font:600 13px system-ui,sans-serif;display:flex;align-items:center;justify-content:center;gap:5px}
+nav button svg{width:17px;height:17px;flex:none}
+nav button.on{color:var(--accent);background:var(--chip)}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
 label{display:block;font-size:12px;color:var(--muted);margin:0 0 4px;font-weight:600}
 .row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1 1 140px;min-width:0}
@@ -81,6 +81,12 @@ table.sum tr.tot td{font-weight:700}
   <h1>İY/MS Bulucu</h1>
   <div id="status">Hazır.</div>
   <div id="bar"><i></i></div>
+<nav>
+  <button data-s="s-bul" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Bulucu</button>
+  <button data-s="s-an"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Analiz</button>
+  <button data-s="s-veri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Veri</button>
+  <button data-s="s-log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg>Kayıt</button>
+</nav>
 </header>
 <main>
 <!-- ================= BULUCU ================= -->
@@ -92,6 +98,7 @@ table.sum tr.tot td{font-weight:700}
     <button class="btn" id="b-run">Dönüşleri bul</button>
     <p class="hint">Avrupa liglerinde sezonun başladığı yıl yazılır (2025 = 2025-26). Kayıtlı sezonlar telefonda saklanır, sonraki taramalarda sadece yeni oynanan maçlar indirilir.</p>
   </div>
+  <div class="card err" id="b-err" style="display:none"></div>
   <div class="toolbar">
     <select id="b-sort" aria-label="Sıralama">
       <option value="tarih-">Tarih (yeni → eski)</option>
@@ -175,12 +182,7 @@ table.sum tr.tot td{font-weight:700}
 </section>
 </main>
 
-<nav>
-  <button data-s="s-bul" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Bulucu</button>
-  <button data-s="s-an"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Analiz</button>
-  <button data-s="s-veri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Veri</button>
-  <button data-s="s-log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg>Kayıt</button>
-</nav>
+
 
 <script>
 "use strict";
@@ -272,14 +274,14 @@ async function getJSON(url){
   for (let i=0;i<3;i++){
     const ctl = new AbortController(); const to = setTimeout(()=>ctl.abort(), 20000);
     try {
-      const r = await fetch(url, {signal: ctl.signal, cache: "no-store"});
+      const r = await fetch(url, {signal: ctl.signal});
       clearTimeout(to);
       if (r.status === 400) throw new BadRequest("HTTP 400");
       if (!r.ok) throw new Error("HTTP " + r.status);
       return await r.json();
     } catch(e){ clearTimeout(to); lastErr = e; if (e instanceof BadRequest) throw e; await new Promise(r=>setTimeout(r, 600*(i+1))); }
   }
-  throw new Error("ESPN'e ulaşılamadı (" + (lastErr?.message || lastErr) + ")");
+  throw new Error("ESPN'e ulaşılamadı (" + (lastErr?.name === "AbortError" ? "zaman aşımı" : (lastErr?.message || lastErr)) + ") · " + url.replace(API, "").slice(0, 60));
 }
 const ymd = d => `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
 const todayStr = () => ymd(new Date());
@@ -469,6 +471,12 @@ function describe([r, kind]){
 }
 
 /* ============================================================ BULUCU */
+function hideError(){ $("b-err").style.display = "none"; }
+function showError(msg){
+  const net = /ulaşılamadı|Load failed|Failed to fetch|NetworkError|HTTP/i.test(msg);
+  $("b-err").innerHTML = `<b>Veri alınamadı.</b> ${esc(msg)}` + (net ? `<p class="hint" style="margin-top:6px">ESPN'e bağlanılamadı. Safari'de bir reklam/içerik engelleyici açıksa bu site için kapat (Ayarlar → Safari → Uzantılar / İçerik Engelleyiciler), VPN ya da iCloud Özel Geçiş açıksa bir kez kapatıp dene. Wi-Fi yerine mobil veriyle de dene.</p>` : "");
+  $("b-err").style.display = "";
+}
 let bRows = [];
 function renderFinder(){
   const sort = $("b-sort").value;
@@ -498,7 +506,7 @@ $("b-run").onclick = () => {
   const v = $("b-lig").value, leagues = v === "*" ? LIGLER.map(x=>x[0]) : [v], full = $("b-full").checked;
   bRows = []; renderFinder();
   runTask(`${v==="*"?"Tüm ligler":LIG_AD[v]} ${seasons.join(", ")} taranıyor…`, async () => {
-    const failed = [];
+    const failed = []; let lastErr = ""; hideError();
     for (const lig of leagues) for (const s of seasons){
       log(`=== ${lig} ${s} ===`);
       try {
@@ -508,9 +516,10 @@ $("b-run").onclick = () => {
         log(`  ${data.rows.length} maç, ${rev.length} dönüş` + (unk ? `, ${unk} maçın devre skoru yok` : ""));
         rev.forEach(r => bRows.push({...r, sezon:s, ligAd: LIG_AD[lig]}));
         renderFinder();
-      } catch(e){ log(`  Hata: ${e.message}`); failed.push(`${LIG_AD[lig]} ${s}`); }
+      } catch(e){ log(`  Hata: ${e.message}`); failed.push(`${LIG_AD[lig]} ${s}`); lastErr = e.message; }
     }
-    status(`Bitti: ${bRows.length} dönüş bulundu.` + (failed.length ? ` Alınamayan: ${failed.join(", ")}` : ""));
+    status(`Bitti: ${bRows.length} dönüş bulundu.` + (failed.length ? ` Alınamayan: ${failed.join(", ")} — neden: ${lastErr}` : ""));
+    if (failed.length) showError(lastErr);
     refreshSeasons();
   });
 };
