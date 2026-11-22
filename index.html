@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<title>İY/MS Bulucu</title>
+<style>
+:root{
+  --bg:#f5f6f8;--panel:#ffffff;--ink:#14161a;--muted:#646b76;--line:#e2e5ea;
+  --accent:#2563eb;--accent-ink:#ffffff;--good:#e7f5ec;--good-ink:#15803d;
+  --bad:#fdecec;--bad-ink:#b42318;--hi:#fff6dc;--hi-line:#f0c75e;--chip:#eef1f5;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1115;--panel:#171a20;--ink:#e8eaee;--muted:#9aa2ae;--line:#2a2f38;
+  --accent:#5b8cff;--accent-ink:#0b0d11;--good:#14291c;--good-ink:#6fd394;
+  --bad:#2e1616;--bad-ink:#ff8a80;--hi:#2c2512;--hi-line:#8a6d1f;--chip:#222730;}}
+:root[data-theme="dark"]{
+  --bg:#0f1115;--panel:#171a20;--ink:#e8eaee;--muted:#9aa2ae;--line:#2a2f38;
+  --accent:#5b8cff;--accent-ink:#0b0d11;--good:#14291c;--good-ink:#6fd394;
+  --bad:#2e1616;--bad-ink:#ff8a80;--hi:#2c2512;--hi-line:#8a6d1f;--chip:#222730;}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+header{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:calc(env(safe-area-inset-top) + 10px) 16px 8px}
+h1{font-size:17px;margin:0 0 4px;font-weight:650;letter-spacing:-.01em}
+#status{font-size:13px;color:var(--muted);min-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#bar{height:3px;background:var(--line);border-radius:2px;margin-top:6px;overflow:hidden}
+#bar>i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+#bar.busy>i{width:30%;animation:slide 1.1s linear infinite}
+@keyframes slide{from{margin-left:-30%}to{margin-left:100%}}
+main{padding:12px 16px calc(84px + env(safe-area-inset-bottom));max-width:760px;margin:0 auto}
+section{display:none}section.on{display:block}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;background:var(--panel);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;background:none;color:var(--muted);padding:10px 4px 8px;font:600 12px system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav button svg{width:22px;height:22px}
+nav button.on{color:var(--accent)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+label{display:block;font-size:12px;color:var(--muted);margin:0 0 4px;font-weight:600}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1 1 140px;min-width:0}
+.field{margin-bottom:10px}
+select,input[type=text],input[type=number],textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 10px}
+textarea{font:13px/1.45 ui-monospace,Menlo,Consolas,monospace;min-height:260px;resize:vertical}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:10px;padding:11px 14px;font:650 15px system-ui,sans-serif;background:var(--accent);color:var(--accent-ink);width:100%}
+.btn.sec{background:var(--chip);color:var(--ink)}
+.btn:disabled{opacity:.5}
+.btns{display:flex;gap:8px;flex-wrap:wrap}.btns>.btn{flex:1 1 140px}
+.check{display:flex;align-items:center;gap:8px;font-size:14px;margin:4px 0 10px}
+.check input{width:18px;height:18px}
+.hint{font-size:12px;color:var(--muted);margin:6px 0 0}
+.toolbar{display:flex;gap:8px;align-items:center;margin:4px 0 8px;flex-wrap:wrap}
+.toolbar select{flex:1 1 150px;width:auto}
+.count{font-size:13px;color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:6px}
+.m{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px;cursor:pointer}
+.m.r21{background:var(--good);border-color:transparent}
+.m.r12{background:var(--bad);border-color:transparent}
+.m.hi{background:var(--hi);border-color:var(--hi-line)}
+.m .top{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}
+.m .teams{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-top:3px;font-weight:600}
+.m .teams .a{text-align:right}
+.m .sc{font:600 13px ui-monospace,Menlo,Consolas,monospace;text-align:center;white-space:nowrap}
+.tag{display:inline-block;padding:1px 7px;border-radius:999px;background:var(--chip);color:var(--ink);font-size:12px;font-weight:650}
+.tag.g{color:var(--good-ink)}.tag.b{color:var(--bad-ink)}
+.det{display:none;margin-top:8px;border-top:1px dashed var(--line);padding-top:8px;font-size:13px}
+.m.open .det{display:block}
+.det ol{margin:0;padding-left:18px}.det li{margin:2px 0}
+.k{color:var(--muted);font-size:12px}
+table.sum{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+table.sum th,table.sum td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:right}
+table.sum th:first-child,table.sum td:first-child{text-align:left}
+table.sum tr.tot td{font-weight:700}
+#log{white-space:pre-wrap;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;margin:0;max-height:70vh;overflow:auto}
+.more{margin-top:8px}
+.err{color:var(--bad-ink)}
+.seasons{font-size:13px}
+.seasons div{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line)}
+</style>
+</head>
+<body>
+<header>
+  <h1>İY/MS Bulucu</h1>
+  <div id="status">Hazır.</div>
+  <div id="bar"><i></i></div>
+</header>
+<main>
+<!-- ================= BULUCU ================= -->
+<section id="s-bul" class="on">
+  <div class="card">
+    <div class="field"><label for="b-lig">Lig</label><select id="b-lig"></select></div>
+    <div class="field"><label for="b-sez">Sezon(lar) — örn. 2026 ya da 2018-2026</label><input id="b-sez" type="text" value="2026" inputmode="numeric"></div>
+    <label class="check"><input type="checkbox" id="b-full"> Baştan indir (kayıtlı veriyi yok say)</label>
+    <button class="btn" id="b-run">Dönüşleri bul</button>
+    <p class="hint">Avrupa liglerinde sezonun başladığı yıl yazılır (2025 = 2025-26). Kayıtlı sezonlar telefonda saklanır, sonraki taramalarda sadece yeni oynanan maçlar indirilir.</p>
+  </div>
+  <div class="toolbar">
+    <select id="b-sort" aria-label="Sıralama">
+      <option value="tarih-">Tarih (yeni → eski)</option>
+      <option value="tarih+">Tarih (eski → yeni)</option>
+      <option value="lig">Lig</option>
+      <option value="tur">Tür (2/1, 1/2)</option>
+    </select>
+    <span class="count" id="b-count"></span>
+  </div>
+  <div class="list" id="b-list"></div>
+</section>
+
+<!-- ================= ANALİZ ================= -->
+<section id="s-an">
+  <div class="card">
+    <div class="field"><label for="a-lig">Lig</label><select id="a-lig"></select></div>
+    <div class="field"><label for="a-sez">Veri sezonları — örn. 2018-2026</label><input id="a-sez" type="text" value="2022-2026" inputmode="numeric"></div>
+    <div class="row">
+      <div class="field"><label for="a-met">Ölçü</label><select id="a-met"><option value="isaret">Toplam işaret</option><option value="farkli">Farklı ezeli sayısı</option></select></div>
+      <div class="field" style="flex:0 1 90px"><label for="a-esik">Eşik</label><input id="a-esik" type="number" min="1" max="9" value="3"></div>
+    </div>
+    <button class="btn" id="a-scan">Kalan fikstürü tara</button>
+    <div class="row" style="margin-top:10px;align-items:flex-end">
+      <div class="field" style="margin:0"><label for="a-test">Test sezonları</label><input id="a-test" type="text" value="2026" inputmode="numeric"></div>
+      <button class="btn sec" id="a-bt" style="flex:1 1 140px">Geriye dönük test</button>
+    </div>
+    <p class="hint">Analiz sadece telefonda kayıtlı verilerle çalışır, internete çıkmaz. Yeni maçlar için önce Bulucu'dan güncelle.</p>
+  </div>
+
+  <div id="a-out" style="display:none">
+    <div class="card" id="a-sumcard" style="display:none"><div id="a-sum"></div></div>
+    <div class="toolbar">
+      <select id="a-filter" aria-label="Filtre"></select>
+      <select id="a-sort" aria-label="Sıralama"></select>
+    </div>
+    <div class="count" id="a-count" style="margin-bottom:6px"></div>
+    <div class="list" id="a-list"></div>
+  </div>
+</section>
+
+<!-- ================= VERİ ================= -->
+<section id="s-veri">
+  <div class="card">
+    <label>Kayıtlı sezonlar</label>
+    <div class="seasons" id="v-seasons">Yükleniyor…</div>
+  </div>
+  <div class="card">
+    <label>Bilgisayardaki dosyalardan aktar</label>
+    <p class="hint" style="margin:0 0 8px">Masaüstü uygulamanın <b>sonuclar</b> klasöründeki <code>…_tum_maclar.csv</code> ve <code>…_fikstur.csv</code> dosyalarını seç (birden fazla seçebilirsin). Böylece eski sezonları telefonda yeniden indirmen gerekmez.</p>
+    <input type="file" id="v-csv" accept=".csv,text/csv" multiple hidden>
+    <div class="btns">
+      <button class="btn sec" id="v-csvbtn">CSV dosyalarını seç</button>
+    </div>
+  </div>
+  <div class="card">
+    <label>Yedek</label>
+    <input type="file" id="v-imp" accept=".json,application/json" hidden>
+    <div class="btns">
+      <button class="btn sec" id="v-exp">Yedeği indir</button>
+      <button class="btn sec" id="v-impbtn">Yedekten geri yükle</button>
+    </div>
+    <p class="hint">Telefonu değiştirirken ya da tarayıcı verisini silmeden önce yedek al.</p>
+  </div>
+  <div class="card">
+    <div class="field"><label for="r-lig">Ezeli rakipler</label><select id="r-lig"></select></div>
+    <textarea id="r-text" spellcheck="false"></textarea>
+    <p class="hint">Her satır: <code>Takım: rakip 1, rakip 2</code>. Adlar kelime bazında eşleşir (Olympique Marseille = Marseille).</p>
+    <div class="btns" style="margin-top:8px">
+      <button class="btn" id="r-save">Kaydet</button>
+      <button class="btn sec" id="r-reset">Varsayılana dön</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="btns"><button class="btn sec" id="v-clear">Bütün kayıtlı veriyi sil</button></div>
+  </div>
+</section>
+
+<!-- ================= KAYIT ================= -->
+<section id="s-log">
+  <div class="card"><pre id="log"></pre></div>
+</section>
+</main>
+
+<nav>
+  <button data-s="s-bul" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Bulucu</button>
+  <button data-s="s-an"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Analiz</button>
+  <button data-s="s-veri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Veri</button>
+  <button data-s="s-log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg>Kayıt</button>
+</nav>
+
+<script>
+"use strict";
+/* ============================================================ sabitler */
+const DATA = {"DEFAULT_RIVALS": {"bra.1": "# Takım: ezeli rakip 1, ezeli rakip 2, ...\n# Kaynak: en.soccerwiki.org kulüp sayfaları (Kasım 2026). İstediğin gibi düzenleyebilirsin.\nFlamengo: Botafogo, Fluminense, Vasco da Gama, Atlético-MG, Bangu\nFluminense: Flamengo, Botafogo, Vasco da Gama\nVasco da Gama: Flamengo, Botafogo, Fluminense\nBotafogo: Flamengo, Fluminense, Vasco da Gama\nPalmeiras: Corinthians, Santos, São Paulo\nCorinthians: Palmeiras, São Paulo, Santos\nSão Paulo: Corinthians, Palmeiras, Santos\nSantos: Palmeiras, São Paulo, Corinthians\nAtlético-MG: Cruzeiro, América-MG, Flamengo, Villa Nova\nCruzeiro: Atlético-MG, América-MG, Villa Nova\nAthletico-PR: Coritiba, Paraná, Operário-PR, Maringá\nCoritiba: Athletico-PR, Paraná, Operário-PR, Londrina\nGrêmio: Internacional, Juventude\nInternacional: Grêmio\nBahia: Vitória, Sport, Ypiranga\nVitória: Bahia\nRemo: Paysandu\nChapecoense: Joinville, Avaí, Brusque, Marcílio Dias\nMirassol: Ferroviária, Novorizontino, Linense\nRed Bull Bragantino:\n# Önceki sezonlarda Série A'da oynayanlar\nAmérica Mineiro: Atlético Mineiro, Cruzeiro EC\nAtlético Goianiense: Goiás, Vila Nova, Goiânia EC\nCeará SC: Fortaleza EC, Ferroviário AC, Atlético Cearense\nCriciúma EC: Figueirense, Avaí FC, Joinville EC, CN Marcílio Dias\nCuiabá EC: Mixto EC, Luverdense EC\nFortaleza EC: Ceará SC, Ferroviário AC\nGoiás: Atlético Goianiense, Vila Nova, Goiânia EC\nJuventude: SER Caxias do Sul, Grêmio\nSport Recife: Santa Cruz, Náutico, América PE, EC Bahia\n", "bra.2": "# Takım: ezeli rakip 1, ezeli rakip 2, ...\n# Kaynak: en.soccerwiki.org kulüp sayfaları (Kasım 2026). İstediğin gibi düzenleyebilirsin.\nAmérica Mineiro: Atlético Mineiro, Cruzeiro EC\nAthletic Club MG:\nAtlético Goianiense: Goiás, Vila Nova, Goiânia EC\nAvaí FC: Figueirense, Chapecoense AF, Joinville EC, Criciúma EC, CN Marcílio Dias\nBotafogo SP: Comercial-SP, Ferroviária\nCeará SC: Fortaleza EC, Ferroviário AC, Atlético Cearense\nCRB: CS Alagoano, Clube Sociedade Esportiva\nCriciúma EC: Figueirense, Avaí FC, Joinville EC, CN Marcílio Dias\nCuiabá EC: Mixto EC, Luverdense EC\nFortaleza EC: Ceará SC, Ferroviário AC\nGoiás: Atlético Goianiense, Vila Nova, Goiânia EC\nGrêmio Novorizontino: Mirassol FC\nJuventude: SER Caxias do Sul, Grêmio\nLondrina EC: Maringá FC, Operário Ferroviário EC, Grêmio de Esportes Maringá, Paraná Clube, Coritiba\nNáutico: Sport Recife, Santa Cruz, Salgueiro AC, América PE, Retrô FC\nOperário Ferroviário EC: Londrina EC, Athletico Paranaense, Coritiba, Paraná Clube\nPonte Preta: Guarani FC, Ituano FC\nSão Bernardo FC: São Caetano, EC Santo André, EC Água Santa, Ituano FC\nSport Recife: Santa Cruz, Náutico, América PE, EC Bahia\nVila Nova: Atlético Goianiense, Goiânia EC, Goiás\n", "tur.1": "# Takım: ezeli rakip 1, ezeli rakip 2, ...\n# Kaynak: en.soccerwiki.org kulüp sayfaları (Kasım 2026). İstediğin gibi düzenleyebilirsin.\nAlanyaspor: Antalyaspor, Mersin İY\nAmed SK: Orduspor, Erzurumspor FK, Kocaelispor\nBeşiktaş JK: Fenerbahçe SK, Galatasaray SK, Trabzonspor, Bursaspor\nÇaykur Rizespor: Trabzonspor\nÇorum FK: Zonguldak Kömürspor\nErzurumspor FK: Amed SK, Iğdır FK\nEyüpspor: Fatih Karagümrük, Kasımpaşa SK\nFenerbahçe SK: Galatasaray SK, Beşiktaş JK, Trabzonspor\nGalatasaray SK: Fenerbahçe SK, Beşiktaş JK, Trabzonspor\nGaziantep FK: Gaziantepspor\nGençlerbirliği: MKE Ankaragücü, Ankaraspor\nGöztepe SK: Karşıyaka SK, Altay SK, Altınordu FK, Bucaspor\nİstanbul Başakşehir:\nKasımpaşa SK: Bayrampaşa SK, Fatih Karagümrük, Eyüpspor\nKocaelispor: Sakaryaspor, Gebzespor, Amed SK\nKonyaspor: Sivasspor, Akhisarspor\nSamsunspor: Trabzonspor\nTrabzonspor: Fenerbahçe SK, Samsunspor, Beşiktaş JK, Galatasaray SK, Çaykur Rizespor\n", "eng.1": "# Takım: ezeli rakip 1, ezeli rakip 2, ...\n# Kaynak: en.soccerwiki.org kulüp sayfaları (Kasım 2026). İstediğin gibi düzenleyebilirsin.\nAFC Bournemouth: Brighton & Hove Albion\nArsenal: Tottenham Hotspur, Manchester United, Chelsea\nAston Villa: Birmingham City, West Bromwich Albion, Wolverhampton Wanderers, Coventry City\nBrentford: Fulham, Queens Park Rangers\nBrighton & Hove Albion: Crystal Palace, AFC Bournemouth\nChelsea: Arsenal, Tottenham Hotspur, Manchester United, Liverpool, Fulham, Leeds United, West Ham United\nCoventry City: Leicester City, Aston Villa, Wolverhampton Wanderers, Birmingham City, Sunderland\nCrystal Palace: Brighton & Hove Albion, Charlton Athletic, Millwall\nEverton: Liverpool\nFulham: Queens Park Rangers, Brentford, Chelsea\nHull City: Grimsby Town, Lincoln City, Scunthorpe United\nIpswich Town: Norwich City\nLeeds United: Manchester United, Chelsea, Millwall, Sheffield Wednesday, Huddersfield Town\nLiverpool: Everton, Manchester United, Chelsea, Manchester City\nManchester City: Manchester United, Liverpool\nManchester United: Manchester City, Liverpool, Arsenal, Chelsea, Leeds United\nNewcastle United: Sunderland, Middlesbrough\nNottingham Forest: Leicester City, Derby County, Sheffield United, Notts County\nSunderland: Newcastle United, Middlesbrough, Coventry City\nTottenham Hotspur: Arsenal, Chelsea, West Ham United\n", "esp.1": "# Takım: ezeli rakip 1, ezeli rakip 2, ...\n# Kaynak: en.soccerwiki.org kulüp sayfaları (Kasım 2026). İstediğin gibi düzenleyebilirsin.\nAthletic Club: Real Sociedad, Real Madrid, Deportivo Alavés, CA Osasuna, Real Racing Club\nAtlético Madrid: Real Madrid, Barcelona\nBarcelona: Real Madrid, RCD Espanyol, Atlético Madrid\nCA Osasuna: Deportivo Alavés, Real Zaragoza, Athletic Club\nCelta Vigo: RC Deportivo\nDeportivo Alavés: Real Sociedad, Athletic Club, CA Osasuna, SD Eibar, CD Mirandés\nElche CF: Hercules CF, Real Murcia, CD Eldense\nGetafe CF: CD Leganés\nLevante UD: Valencia CF\nMálaga CF: Granada CF, UD Almería, Córdoba CF\nRayo Vallecano:\nRC Deportivo: Celta Vigo\nRCD Espanyol: Barcelona\nReal Betis: Sevilla FC, Granada CF, Córdoba CF, UD Almería\nReal Madrid: Barcelona, Atlético Madrid, Valencia CF, Athletic Club\nReal Racing Club: Gimnástica Torrelavega, Athletic Club, Real Oviedo\nReal Sociedad: Athletic Club, Deportivo Alavés\nSevilla FC: Real Betis\nValencia CF: Levante UD, Real Madrid, Villarreal CF\nVillarreal CF: Valencia CF, CD Castellón\n", "ita.1": "# Takım: ezeli rakip 1, ezeli rakip 2, ...\n# Kaynak: en.soccerwiki.org kulüp sayfaları (Kasım 2026). İstediğin gibi düzenleyebilirsin.\nAC Milan: Internazionale, Juventus, AS Roma, SSC Napoli\nAC Monza: Como 1907, Pro Sesto 1913\nACF Fiorentina: Bologna FC, Juventus, SS Lazio, Empoli, Siena FC, US Livorno, AS Roma, Pisa SC\nAS Roma: SS Lazio, SSC Napoli, AC Milan, Internazionale, Juventus, Atalanta BC, ACF Fiorentina\nAtalanta BC: Brescia Calcio, UC AlbinoLeffe, SSC Napoli, Internazionale, AS Roma\nBologna FC: ACF Fiorentina, SPAL, Cesena FC, Sampdoria, Parma Calcio 1913, Reggiana 1919, Modena\nCagliari: Palermo FC, SEF Torres\nComo 1907: Calcio Lecco, Varese FC, AC Monza\nFrosinone Calcio: Latina Calcio 1932\nGenoa CFC: Sampdoria, Spezia Calcio\nInternazionale: AC Milan, Juventus, AS Roma, SSC Napoli, Atalanta BC\nJuventus: Torino, Internazionale, ACF Fiorentina, AC Milan, SSC Napoli, AS Roma\nParma Calcio 1913: Reggiana 1919, Bologna FC\nSS Lazio: AS Roma, SSC Napoli, ACF Fiorentina, US Livorno\nSSC Napoli: AS Roma, SSC Bari, Juventus, SS Lazio, Atalanta BC, Internazionale, AC Milan, US Salernitana, Calcio Foggia 1920\nTorino: Juventus\nUdinese Calcio: US Triestina, Venezia FC\nUS Lecce: SSC Bari\nUS Sassuolo: Carpi, Cesena FC, Modena\nVenezia FC: Udinese Calcio, Hellas Verona, Calcio Padova\n", "ger.1": "# Takım: ezeli rakip 1, ezeli rakip 2, ...\n# Kaynak: en.soccerwiki.org kulüp sayfaları (Kasım 2026). İstediğin gibi düzenleyebilirsin.\n1. FC Köln: Borussia Mönchengladbach, Bayer Leverkusen, Fortuna Düsseldorf, Fortuna Köln\n1. FC Union Berlin: Hertha BSC, BFC Dynamo, Hansa Rostock, Dynamo Dresden, 1. FC Magdeburg\n1. FSV Mainz 05: Eintracht Frankfurt, 1. FC Kaiserslautern\nBayer Leverkusen: 1. FC Köln\nBayern München: VfB Stuttgart, Werder Bremen, Borussia Dortmund, Hamburger SV, FC Schalke 04, 1. FC Nürnberg, TSV 1860 München\nBorussia Dortmund: FC Schalke 04, Bayern München, Borussia Mönchengladbach\nBorussia Mönchengladbach: 1. FC Köln, Borussia Dortmund\nEintracht Frankfurt: Kickers Offenbach, 1. FSV Mainz 05, 1. FC Kaiserslautern, SV Darmstadt 98\nFC Augsburg: TSV 1860 München, FC Ingolstadt 04\nFC Schalke 04: Borussia Dortmund, Bayern München\nHamburger SV: FC St. Pauli, Werder Bremen, Bayern München\nRB Leipzig: 1. FC Lokomotive Leipzig, Dynamo Dresden\nSC Freiburg: Karlsruher SC, VfB Stuttgart, VfR Aalen\nSC Paderborn 07: Arminia Bielefeld, VfL Osnabrück\nSV Elversberg: FC 08 Homburg, 1. FC Saarbrücken\nTSG 1899 Hoffenheim:\nVfB Stuttgart: Karlsruher SC, Stuttgarter Kickers, Bayern München, SC Freiburg\nWerder Bremen: Hamburger SV, Bayern München\n", "fra.1": "# Takım: ezeli rakip 1, ezeli rakip 2, ...\n# Kaynak: en.soccerwiki.org kulüp sayfaları (Kasım 2026). İstediğin gibi düzenleyebilirsin.\nAJ Auxerre: ES Troyes AC, Dijon FCO\nAngers SCO: Stade Lavallois, FC Nantes\nAS Monaco: OGC Nice, Olympique Marseille\nES Troyes AC: AJ Auxerre, Stade de Reims, CS Sedan\nFC Lorient: Stade Rennais, FC Nantes, Stade Brestois 29, EA Guingamp\nLe Havre AC: SM Caen, US Quevilly-Rouen Métropole\nLe Mans FC: Tours FC, Stade Lavallois\nLille OSC: RC Lens, Valenciennes\nOGC Nice: AS Monaco, SC Bastia, Olympique Marseille, AS Cannes\nOlympique Lyonnais: AS Saint-Etienne, Paris Saint-Germain, Olympique Marseille\nOlympique Marseille: Paris Saint-Germain, AS Monaco, Olympique Lyonnais, AS Saint-Etienne, OGC Nice\nParis FC: Red Star, US Créteil\nParis Saint-Germain: Olympique Marseille, Olympique Lyonnais\nRC Lens: Lille OSC\nRC Strasbourg Alsace: FC Metz, FC Mulhouse\nStade Brestois 29: Stade Rennais, EA Guingamp, FC Lorient\nStade Rennais: FC Nantes, EA Guingamp, Stade Brestois 29, FC Lorient, SM Caen\nToulouse FC: Girondins Bordeaux, Rodez AF\n", "por.1": "# Takım: ezeli rakip 1, ezeli rakip 2, ...\n# Kaynak: en.soccerwiki.org kulüp sayfaları (Kasım 2026). İstediğin gibi düzenleyebilirsin.\nAcadémico de Viseu: Lusitano FCV, FC Vizela, CD Tondela\nCasa Pia AC:\nCD Nacional: CS Marítimo, União da Madeira\nCD Santa Clara: CD Operário\nCS Marítimo: CD Nacional, União da Madeira\nEstrela da Amadora:\nFC Alverca:\nFC Arouca: UD Oliveirense, SC Beira-Mar\nFC Famalicão: Ribeirão FC, AD Oliveirense, Varzim SC, Gil Vicente FC\nFC Porto: SL Benfica, Sporting CP, Boavista FC\nGD Estoril Praia:\nGil Vicente FC: CF Belenenses, Varzim SC, FC Famalicão\nMoreirense FC: FC Vizela\nRio Ave: Varzim SC, Leixões SC\nSC Braga: Vitória Guimarães SC\nSL Benfica: FC Porto, Sporting CP\nSporting CP: SL Benfica, FC Porto\nVitória Guimarães SC: SC Braga, Boavista FC\n", "ned.1": "# Takım: ezeli rakip 1, ezeli rakip 2, ...\n# Kaynak: en.soccerwiki.org kulüp sayfaları (Kasım 2026). İstediğin gibi düzenleyebilirsin.\nADO Den Haag: FC Utrecht, Sparta Rotterdam, Feyenoord, Ajax, SVV Scheveningen, FC Dordrecht\nAjax: PSV, Feyenoord, FC Utrecht, AZ Alkmaar, ADO Den Haag\nAZ Alkmaar: Ajax, HFC Haarlem\nFC Groningen: SC Heerenveen, FC Emmen\nFC Twente: Heracles Almelo, Go Ahead Eagles\nFC Utrecht: Ajax, ADO Den Haag\nFeyenoord: Ajax, Sparta Rotterdam, PSV, ADO Den Haag\nFortuna Sittard: Roda JC Kerkrade, MVV Maastricht, VVV-Venlo\nGo Ahead Eagles: PEC Zwolle, De Graafschap, FC Twente\nNEC Nijmegen: Vitesse, De Graafschap\nPEC Zwolle: Go Ahead Eagles\nPSV: Ajax, Feyenoord\nSBV Excelsior: Sparta Rotterdam, FC Dordrecht\nSC Cambuur: SC Heerenveen\nSC Heerenveen: FC Groningen, SC Cambuur\nSparta Rotterdam: SBV Excelsior, Feyenoord, ADO Den Haag, FC Dordrecht\nTelstar: Almere City, FC Volendam\nWillem II: NAC Breda, MVV Maastricht, RKC Waalwijk\n", "arg.1": "# Takım: ezeli rakip 1, ezeli rakip 2, ...\n# Kaynak: en.soccerwiki.org kulüp sayfaları (Kasım 2026). İstediğin gibi düzenleyebilirsin.\nArgentinos Juniors:\nAtlético Tucumán: San Martín de Tucumán, San Jorge de Tucumán\nBanfield: Lanús, Quilmes AC, Arsenal de Sarandí, Defensa y Justicia, CA Temperley\nBarracas Central: Sportivo Barracas\nBelgrano: CA Talleres, Racing de Córdoba\nBoca Juniors: River Plate\nCA Aldosivi: Unión de Mar del Plata, CA Alvarado, Villa Mitre, Círculo Deportivo\n# Huracán sayfası okunamadı; bilinen derbisi San Lorenzo\nCA Huracán: San Lorenzo\nCA Platense: CA Tigre\nCA Sarmiento: Club Rivadavia, Club Olimpo, Deportivo Morón\nCA Talleres: Belgrano, Racing de Córdoba\nCA Tigre: CA Platense\nCA Unión: CA Colón\nCentral Córdoba SdE: CA Mitre SdE, CA Güemes\nDefensa y Justicia: Quilmes AC, Arsenal de Sarandí, Deportivo Laferrere, Banfield, Club El Porvenir\nDeportivo Riestra: Sacachispas FC\nEstudiantes de LP: Gimnasia La Plata\nEstudiantes de Río Cuarto: Sportivo Belgrano, Sarmiento de Leones\nGimnasia de Mendoza: Independiente Rivadavia, San Martín de Mendoza, Godoy Cruz, Deportivo Maipú\nGimnasia La Plata: Estudiantes de LP\nIndependiente: Racing Club, San Lorenzo\nIndependiente Rivadavia: Godoy Cruz, Deportivo Maipú, Gimnasia de Mendoza, San Martín de San Juan\nInstituto ACC: Racing de Córdoba\nLanús: Banfield, Arsenal de Sarandí, Talleres de RE\nNewell's Old Boys: Rosario Central, Central Córdoba de Rosario\nRacing Club: Independiente, San Lorenzo, Arsenal de Sarandí\nRiver Plate: Boca Juniors\nRosario Central: Newell's Old Boys\nSan Lorenzo: CA Huracán, Independiente, Racing Club\nVélez Sársfield: Ferro Carril Oeste, Nueva Chicago, Argentinos Juniors\n"}, "ALIASES": {"vasco": "vascodagama", "rbbragantino": "redbullbragantino", "bragantino": "redbullbragantino", "atleticomineiro": "atleticomg", "americamineiro": "americamg", "athleticoparanaense": "athleticopr", "atleticoparanaense": "athleticopr", "sportrecife": "sport", "chapecoensesc": "chapecoense", "clubedoremo": "remo", "gremionovorizontino": "novorizontino", "operarioferroviario": "operariopr", "operarioferroviarioec": "operariopr", "atleticogoianiense": "atleticogo", "mirassolfc": "mirassol", "caykurrizespor": "rizespor", "crb": "clubederegatasbrasil", "deportivoalaves": "alaves", "realracingclub": "racingsantander", "estreladaamadora": "estrela", "gdestorilpraia": "estoril"}, "STOP": ["ac", "acc", "acf", "ad", "af", "afc", "alsace", "as", "bc", "bsc", "ca", "calcio", "cd", "cf", "cfc", "club", "cn", "cp", "cs", "da", "de", "del", "di", "do", "ec", "fc", "fk", "fsv", "gd", "hfc", "jk", "la", "le", "les", "ogc", "olympique", "osc", "praia", "rc", "rcd", "sad", "sbv", "sc", "sd", "sk", "sl", "ss", "ssc", "stade", "sv", "tsg", "ud", "us", "vfb", "vfl"], "TOKEN_ALIAS": {"munchen": ["munich"], "koln": ["cologne"], "hamburger": ["hamburg"], "lyonnais": ["lyon"], "rennais": ["rennes"], "brestois": ["brest"], "lp": ["plata"], "sde": ["santiago", "estero"], "alaves": ["alaves"], "internazionale": ["inter"], "inter": ["inter"], "napoli": ["napoli"], "deportivo": ["deportivo"], "guimaraes": ["guimaraes"], "monchengladbach": ["gladbach"], "gladbach": ["gladbach"], "saintetienne": ["saint", "etienne"], "stetienne": ["saint", "etienne"]}};
+const LIGLER = [
+  ["bra.1","Brezilya Série A"],["bra.2","Brezilya Série B"],["tur.1","Türkiye Süper Lig"],
+  ["eng.1","İngiltere Premier League"],["esp.1","İspanya La Liga"],["ita.1","İtalya Serie A"],
+  ["ger.1","Almanya Bundesliga"],["fra.1","Fransa Ligue 1"],["por.1","Portekiz Liga"],
+  ["ned.1","Hollanda Eredivisie"],["arg.1","Arjantin Liga"]];
+const LIG_AD = Object.fromEntries(LIGLER);
+const CALENDAR_YEAR = new Set(["bra","arg","usa","jpn","chn","kor","nor","swe","fin","irl"]);
+const API = "https://site.api.espn.com/apis/site/v2/sports/soccer";
+const REV = new Set(["1/2","2/1"]);
+const FIXTURE_TTL = 12*3600*1000;
+const $ = id => document.getElementById(id);
+
+/* ============================================================ arayüz yardımcıları */
+const logEl = $("log");
+function log(s){ logEl.textContent += s + "\n"; if (logEl.textContent.length > 200000) logEl.textContent = logEl.textContent.slice(-150000); }
+function status(s){ $("status").textContent = s; }
+function progress(p){ const b=$("bar"); if (p==null){b.classList.remove("busy");b.firstElementChild.style.width="0";}
+  else if (p<0){b.classList.add("busy");b.firstElementChild.style.width="";}
+  else {b.classList.remove("busy");b.firstElementChild.style.width=Math.round(p*100)+"%";} }
+function esc(s){ return String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+let busy = false, wakeLock = null;
+async function runTask(label, fn){
+  if (busy) return; busy = true;
+  document.querySelectorAll("button.btn").forEach(b => b.disabled = true);
+  status(label); progress(-1); log("\n— " + label);
+  try { wakeLock = await navigator.wakeLock?.request("screen"); } catch(e){}
+  try { await fn(); }
+  catch(e){ console.error(e); log("Hata: " + (e.message||e)); status("Hata: " + (e.message||e) + " (ayrıntı Kayıt sekmesinde)"); }
+  finally { busy = false; document.querySelectorAll("button.btn").forEach(b => b.disabled = false); progress(null);
+    try { await wakeLock?.release(); } catch(e){} wakeLock = null; }
+}
+function parseSeasons(text){
+  const yr = x => { const y = parseInt(x,10); return y < 100 ? y + 2000 : y; };
+  const out = new Set();
+  for (const part of text.replace(/[,;]/g," ").replace(/[–—]/g,"-").replace(/\s*-\s*/g,"-").split(/\s+/).filter(Boolean)){
+    if (part.includes("-")){ let [a,b] = part.split("-").map(yr); if (a>b) [a,b]=[b,a]; for (let y=a;y<=b;y++) out.add(y); }
+    else out.add(yr(part));
+  }
+  const s = [...out].sort((a,b)=>a-b);
+  if (!s.length || s.some(y => !(y>1990 && y<2100))) throw new Error("Sezonu yıl olarak yaz, örn. 2026 ya da 2018-2026");
+  return s;
+}
+function fillLeagueSelect(sel, withAll){
+  sel.innerHTML = LIGLER.map(([k,a]) => `<option value="${k}">${esc(a)}</option>`).join("") + (withAll ? `<option value="*">Tüm ligler</option>` : "");
+}
+
+/* ============================================================ depolama (IndexedDB, olmazsa bellek) */
+const store = (() => {
+  let dbp = null; const mem = new Map();
+  function open(){
+    if (dbp) return dbp;
+    dbp = new Promise(res => {
+      try {
+        const rq = indexedDB.open("iyms", 1);
+        rq.onupgradeneeded = () => rq.result.createObjectStore("kv");
+        rq.onsuccess = () => res(rq.result);
+        rq.onerror = () => res(null);
+      } catch(e){ res(null); }
+    });
+    return dbp;
+  }
+  async function tx(mode, f){
+    const db = await open(); if (!db) return f(null);
+    return new Promise((res, rej) => { const t = db.transaction("kv", mode); const s = t.objectStore("kv");
+      const r = f(s); t.oncomplete = () => res(r && "result" in r ? r.result : r); t.onerror = () => rej(t.error); });
+  }
+  return {
+    async get(k){ const db = await open(); if (!db) return mem.get(k);
+      return new Promise(res => { const r = db.transaction("kv").objectStore("kv").get(k); r.onsuccess=()=>res(r.result); r.onerror=()=>res(undefined); }); },
+    async set(k,v){ const db = await open(); if (!db){ mem.set(k,v); return; } await tx("readwrite", s => s.put(v,k)); },
+    async del(k){ const db = await open(); if (!db){ mem.delete(k); return; } await tx("readwrite", s => s.delete(k)); },
+    async keys(prefix){ const db = await open(); if (!db) return [...mem.keys()].filter(k=>k.startsWith(prefix));
+      return new Promise(res => { const r = db.transaction("kv").objectStore("kv").getAllKeys(IDBKeyRange.bound(prefix, prefix+"￿")); r.onsuccess=()=>res(r.result); r.onerror=()=>res([]); }); },
+    async clear(){ const db = await open(); if (!db){ mem.clear(); return; } await tx("readwrite", s => s.clear()); },
+    async persistent(){ try { return await navigator.storage?.persist?.(); } catch(e){ return false; } },
+    get memoryOnly(){ return open().then(db => !db); }
+  };
+})();
+
+/* ============================================================ ESPN */
+class BadRequest extends Error {}
+async function getJSON(url){
+  let lastErr;
+  for (let i=0;i<3;i++){
+    const ctl = new AbortController(); const to = setTimeout(()=>ctl.abort(), 20000);
+    try {
+      const r = await fetch(url, {signal: ctl.signal, cache: "no-store"});
+      clearTimeout(to);
+      if (r.status === 400) throw new BadRequest("HTTP 400");
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return await r.json();
+    } catch(e){ clearTimeout(to); lastErr = e; if (e instanceof BadRequest) throw e; await new Promise(r=>setTimeout(r, 600*(i+1))); }
+  }
+  throw new Error("ESPN'e ulaşılamadı (" + (lastErr?.message || lastErr) + ")");
+}
+const ymd = d => `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
+const todayStr = () => ymd(new Date());
+function seasonDays(league, season){
+  const months = CALENDAR_YEAR.has(league.split(".")[0]) ? Array.from({length:12},(_,i)=>[season,i]) :
+    [...Array.from({length:6},(_,i)=>[season,i+6]), ...Array.from({length:6},(_,i)=>[season+1,i])];
+  const out = [];
+  for (const [y,m] of months){ const n = new Date(y, m+1, 0).getDate(); for (let d=1; d<=n; d++) out.push(ymd(new Date(y,m,d))); }
+  return out;
+}
+function code(h,a){ return h>a ? "1" : h<a ? "2" : "X"; }
+function apiEvent(e){
+  const comp = (e.competitions||[{}])[0];
+  const st = ((comp.status||e.status||{}).type)||{};
+  const cs = comp.competitors||[];
+  const home = cs.find(c=>c.homeAway==="home"), away = cs.find(c=>c.homeAway==="away");
+  if (!home || !away) return null;
+  const m = {id:String(e.id), tarih:(e.date||"").slice(0,10), ev:(home.team||{}).displayName, dep:(away.team||{}).displayName,
+             ms_ev:null, ms_dep:null, iy_ev:null, iy_dep:null};
+  if (!st.completed){ if (st.state === "pre"){ m.oynandi=false; return m; } return null; }
+  m.oynandi = true;
+  m.ms_ev = parseInt(home.score||0,10); m.ms_dep = parseInt(away.score||0,10);
+  const hl = home.linescores||[], al = away.linescores||[];
+  if (hl.length && al.length){ const a=parseFloat(hl[0].value), b=parseFloat(al[0].value); if (!isNaN(a)&&!isNaN(b)){ m.iy_ev=Math.trunc(a); m.iy_dep=Math.trunc(b);} }
+  if (m.iy_ev === null){
+    const goals = (comp.details||[]).filter(d=>d.scoringPlay);
+    if (goals.length === m.ms_ev + m.ms_dep){
+      const hid = (home.team||{}).id;
+      const fh = goals.filter(d => { const mm = /(\d+)/.exec(((d.clock||{}).displayValue)||""); return mm && parseInt(mm[1],10) <= 45; });
+      m.iy_ev = fh.filter(d => ((d.team||{}).id) === hid).length; m.iy_dep = fh.length - m.iy_ev;
+    }
+  }
+  return m;
+}
+async function dayEvents(league, d, today){
+  const key = `day|${league}|${d}`;
+  const c = await store.get(key); if (c) return c;
+  const fk = `fut|${league}|${d}`;
+  if (d > today){ const f = await store.get(fk); if (f && Date.now() - f.t < FIXTURE_TTL) return f.e; }
+  const events = (await getJSON(`${API}/${league}/scoreboard?dates=${d}`)).events || [];
+  if (d > today) await store.set(fk, {t: Date.now(), e: events});
+  if (d < today && events.every(e => ((((e.competitions||[{}])[0].status||{}).type||{}).state) === "post")) await store.set(key, events);
+  return events;
+}
+async function pool(items, n, fn, onProgress){
+  const out = new Array(items.length); let i = 0, done = 0;
+  async function worker(){ while (i < items.length){ const k = i++; out[k] = await fn(items[k]); done++; onProgress?.(done, items.length); } }
+  await Promise.all(Array.from({length: Math.min(n, items.length)}, worker));
+  return out;
+}
+async function htFromSummary(m, league){
+  const k = `ht|${m.id}`; const c = await store.get(k); if (c) return c;
+  try {
+    const data = await getJSON(`${API}/${league}/summary?event=${m.id}`);
+    const comp = ((data.header||{}).competitions||[{}])[0];
+    const cs = comp.competitors||[];
+    const h = cs.find(c=>c.homeAway==="home"), a = cs.find(c=>c.homeAway==="away");
+    const v = x => Math.trunc(parseFloat((x.linescores||[])[0].displayValue ?? (x.linescores||[])[0].value));
+    const ht = [v(h), v(a)];
+    if (ht.some(isNaN)) return null;
+    await store.set(k, ht); return ht;
+  } catch(e){ return null; }
+}
+async function fillHT(league, ms){
+  const todo = ms.filter(m => m.iy_ev === null || m.iy_dep === null);
+  if (!todo.length) return;
+  await pool(todo, 6, async m => { const ht = await htFromSummary(m, league); if (ht){ m.iy_ev = ht[0]; m.iy_dep = ht[1]; } },
+    (d,n) => { status(`Eksik devre skoru tamamlanıyor ${d}/${n}`); progress(d/n); });
+}
+function finish(m){ m.iyms = (m.iy_ev === null || m.iy_ev === undefined) ? "?" : `${code(m.iy_ev,m.iy_dep)}/${code(m.ms_ev,m.ms_dep)}`; return m; }
+const byDate = (a,b) => (a.tarih+a.ev).localeCompare(b.tarih+b.ev);
+async function collectFull(league, season){
+  const today = todayStr(), days = seasonDays(league, season);
+  const evs = await pool(days, 8, d => dayEvents(league, d, today), (d,n) => { status(`${LIG_AD[league]} ${season}: gün ${d}/${n}`); progress(d/n); });
+  const all = {};
+  for (const e of evs.flat()){ const m = apiEvent(e); if (m) all[m.id] = m; }
+  const played = Object.values(all).filter(m=>m.oynandi), fixtures = Object.values(all).filter(m=>!m.oynandi).sort(byDate);
+  if (!played.length && !fixtures.length) throw new Error("ESPN'de bu sezon için maç bulunamadı");
+  await fillHT(league, played);
+  return {rows: played.map(finish).sort(byDate), fixtures};
+}
+async function updateSeason(league, season, full){
+  const key = `season|${league}|${season}`;
+  const saved = full ? null : await store.get(key);
+  if (!saved){ if (!full) log("  Kayıtlı veri yok, sezon baştan indiriliyor"); return collectFull(league, season); }
+  let {rows, fixtures} = saved;
+  if (!fixtures.length){ log(`  Sezon bitmiş, kayıttan okundu (${rows.length} maç)`); return {rows, fixtures, fromDisk:true}; }
+  const today = todayStr(), sd = seasonDays(league, season), first = sd[0], last = sd[sd.length-1];
+  const lastPlayed = rows.reduce((x,r)=> r.tarih > x ? r.tarih : x, "");
+  let start = first;
+  if (lastPlayed){ const d = new Date(lastPlayed + "T12:00:00"); d.setDate(d.getDate()-2); start = ymd(d) > first ? ymd(d) : first; }
+  const end = today < last ? today : last;
+  const days = new Set(sd.filter(d => d >= start && d <= end));
+  for (const f of fixtures){ const d = f.tarih.replace(/-/g,""); if (d <= today && d >= first && d <= last) days.add(d); }
+  const list = [...days].sort();
+  log(`  Kayıtlı veri bulundu (${rows.length} maç). Sadece ${start.slice(0,4)}-${start.slice(4,6)}-${start.slice(6)} sonrası ${list.length} gün kontrol ediliyor`);
+  let evs;
+  try { evs = await pool(list, 8, d => dayEvents(league, d, today), (d,n)=>{ status(`${LIG_AD[league]} ${season}: gün ${d}/${n}`); progress(d/n); }); }
+  catch(e){ log(`  Hızlı güncelleme olmadı (${e.message}), sezon baştan indiriliyor`); return collectFull(league, season); }
+  const played = Object.fromEntries(rows.map(r=>[r.id,r])), fx = Object.fromEntries(fixtures.map(r=>[r.id,r]));
+  const nw = [];
+  for (const e of evs.flat()){
+    const m = apiEvent(e); if (!m) continue;
+    if (m.oynandi){ delete fx[m.id]; const old = played[m.id]; if (old && !["?","",null,undefined].includes(old.iyms)) continue; nw.push(m); played[m.id] = m; }
+    else if (!played[m.id]) fx[m.id] = m;
+  }
+  await fillHT(league, nw); nw.forEach(finish);
+  log(`  ${nw.length} yeni oynanmış maç eklendi`);
+  return {rows: Object.values(played).sort(byDate), fixtures: Object.values(fx).sort(byDate)};
+}
+async function saveSeason(league, season, data){
+  const clean = r => ({id:r.id, tarih:r.tarih, ev:r.ev, dep:r.dep, iy_ev:r.iy_ev, iy_dep:r.iy_dep, ms_ev:r.ms_ev, ms_dep:r.ms_dep, iyms:r.iyms});
+  await store.set(`season|${league}|${season}`, {rows: data.rows.map(clean), fixtures: data.fixtures.map(f=>({id:f.id,tarih:f.tarih,ev:f.ev,dep:f.dep})), saved: Date.now()});
+}
+
+/* ============================================================ ezeli analiz */
+const TRANSLIT = {"ı":"i","ß":"ss","ø":"o","æ":"ae","đ":"d","ł":"l","&":" "};
+const STOP = new Set(DATA.STOP);
+const ascii = s => (s||"").replace(/[ıßøæđł&]/g, c=>TRANSLIT[c]).normalize("NFKD").replace(/[̀-ͯ]/g,"").replace(/[^\x00-\x7f]/g,"").toLowerCase();
+function canon(name){ const s = ascii(name).replace(/[^a-z0-9]/g,""); return DATA.ALIASES[s] || s; }
+function tokens(name){ const out = [];
+  for (const t of ascii(name).split(/[^a-z0-9]+/)){ if (t.length<2 || /^\d+$/.test(t) || STOP.has(t)) continue;
+    for (const x of (DATA.TOKEN_ALIAS[t] || [t])) if (!out.includes(x)) out.push(x); }
+  return out; }
+function resolve(name, names){
+  const c = canon(name); if (!names || names[c]) return c;
+  const rt = tokens(name); if (!rt.length) return c;
+  let best = null;
+  for (const [k, disp] of Object.entries(names)){
+    const tt = tokens(disp);
+    if (tt.length && rt.every(x=>tt.includes(x)) && (rt.length > 1 || rt[0] === tt[0])){
+      const extra = tt.length - rt.length; if (!best || extra < best[0]) best = [extra, k]; }
+  }
+  return best ? best[1] : c;
+}
+function parseRivals(text, names, unmatched){
+  const out = {};
+  for (let line of text.split(/\r?\n/)){
+    line = line.trim(); if (!line || line.startsWith("#") || !line.includes(":")) continue;
+    const i = line.indexOf(":"), team = line.slice(0,i), rest = line.slice(i+1);
+    const key = resolve(team, names);
+    if (names && unmatched && !names[key]) unmatched.push(team.trim());
+    out[key] = out[key] || new Set();
+    rest.split(",").map(x=>x.trim()).filter(Boolean).forEach(x => out[key].add(resolve(x, names)));
+  }
+  return out;
+}
+async function rivalsText(league){ return (await store.get(`rivals|${league}`)) ?? (DATA.DEFAULT_RIVALS[league] || "# Takım: ezeli rakip 1, ezeli rakip 2\n"); }
+function signals(h, a, before, revs, rivals){
+  const prior = revs.filter(r => r.tarih < before);
+  const isPair = r => (r.h===h && r.a===a) || (r.h===a && r.a===h);
+  const h2h = prior.filter(isPair);
+  const last = h2h.reduce((x,r)=> r.tarih > x ? r.tarih : x, "");
+  const ra = new Set([...(rivals[a]||[])].filter(x=>x!==h)), rh = new Set([...(rivals[h]||[])].filter(x=>x!==a));
+  const sideH = [], sideA = [];
+  for (const r of prior){
+    if (r.tarih <= last || isPair(r)) continue;
+    if (r.h===h || r.a===h){ const o = r.h===h ? r.a : r.h; if (ra.has(o)) sideH.push([r,o]); }
+    if (r.h===a || r.a===a){ const o = r.h===a ? r.a : r.h; if (rh.has(o)) sideA.push([r,o]); }
+  }
+  const items = [...h2h.map(r=>[r,"aralarında"]), ...sideH.map(([r])=>[r,"X→Y ezelisi"]), ...sideA.map(([r])=>[r,"Y→X ezelisi"])]
+    .sort((x,y)=>x[0].tarih.localeCompare(y[0].tarih));
+  return {items, farkli: Math.max(new Set(sideH.map(x=>x[1])).size, new Set(sideA.map(x=>x[1])).size)};
+}
+async function loadLeague(league, seasons){
+  const have = [], missing = [], played = []; let fixtures = [];
+  for (const s of seasons){
+    const d = await store.get(`season|${league}|${s}`);
+    if (!d){ missing.push(s); continue; }
+    have.push(s);
+    d.rows.forEach(r => played.push({...r, sezon:s, lig:league}));
+  }
+  if (have.length){ const d = await store.get(`season|${league}|${Math.max(...have)}`); fixtures = d.fixtures.map(f=>({...f, sezon:Math.max(...have), lig:league})); }
+  if (have.length) log(`${league}: ${have.join(", ")} kayıttan okundu`);
+  if (missing.length) log(`${league}: ${missing.join(", ")} sezonlarının verisi yok, atlandı (Bulucu'dan indirebilir ya da Veri sekmesinden CSV aktarabilirsin)`);
+  if (!have.length) return null;
+  const names = {};
+  for (const r of [...played, ...fixtures]){ r.h = canon(r.ev); r.a = canon(r.dep); names[r.h] = r.ev; names[r.a] = r.dep; }
+  const unmatched = [];
+  const rivals = parseRivals(await rivalsText(league), names, unmatched);
+  if (unmatched.length) log(`${LIG_AD[league]}: ezeli listesinde verideki hiçbir takımla eşleşmeyen adlar (o sezonlarda ligde yoksa sorun değil): ${unmatched.join(", ")}`);
+  played.sort((x,y)=>x.tarih.localeCompare(y.tarih));
+  return {played, fixtures, rivals, names};
+}
+function describe([r, kind]){
+  return `${r.tarih}  ${esc(r.ev)} ${r.ms_ev}-${r.ms_dep} ${esc(r.dep)}  <span class="k">(İY ${r.iy_ev}-${r.iy_dep}) ${r.iyms} · ${kind}</span>`;
+}
+
+/* ============================================================ BULUCU */
+let bRows = [];
+function renderFinder(){
+  const sort = $("b-sort").value;
+  const rows = [...bRows];
+  if (sort === "tarih-") rows.sort((a,b)=>b.tarih.localeCompare(a.tarih));
+  else if (sort === "tarih+") rows.sort((a,b)=>a.tarih.localeCompare(b.tarih));
+  else if (sort === "lig") rows.sort((a,b)=>(a.ligAd+a.tarih).localeCompare(b.ligAd+b.tarih));
+  else rows.sort((a,b)=>(a.iyms+a.tarih).localeCompare(b.iyms+b.tarih));
+  $("b-count").textContent = bRows.length ? `${bRows.length} dönüş` : "";
+  renderList($("b-list"), rows, m => `
+    <div class="m ${m.iyms==="2/1"?"r21":"r12"}">
+      <div class="top"><span>${m.tarih} · ${esc(m.ligAd)} ${m.sezon}</span><span class="tag ${m.iyms==="2/1"?"g":"b"}">${m.iyms}</span></div>
+      <div class="teams"><span>${esc(m.ev)}</span><span class="sc">${m.iy_ev}-${m.iy_dep} / ${m.ms_ev}-${m.ms_dep}</span><span class="a">${esc(m.dep)}</span></div>
+    </div>`);
+}
+function renderList(el, rows, tpl, step=200){
+  let shown = 0; el.innerHTML = "";
+  const more = document.createElement("button"); more.className = "btn sec more";
+  const add = () => { const frag = rows.slice(shown, shown+step).map(tpl).join(""); more.remove();
+    el.insertAdjacentHTML("beforeend", frag); shown += step;
+    if (shown < rows.length){ more.textContent = `Daha fazla göster (${rows.length - shown} kaldı)`; el.appendChild(more); } };
+  more.onclick = add; add();
+}
+$("b-sort").onchange = renderFinder;
+$("b-run").onclick = () => {
+  let seasons; try { seasons = parseSeasons($("b-sez").value); } catch(e){ status(e.message); return; }
+  const v = $("b-lig").value, leagues = v === "*" ? LIGLER.map(x=>x[0]) : [v], full = $("b-full").checked;
+  bRows = []; renderFinder();
+  runTask(`${v==="*"?"Tüm ligler":LIG_AD[v]} ${seasons.join(", ")} taranıyor…`, async () => {
+    const failed = [];
+    for (const lig of leagues) for (const s of seasons){
+      log(`=== ${lig} ${s} ===`);
+      try {
+        const data = await updateSeason(lig, s, full);
+        if (!data.fromDisk) await saveSeason(lig, s, data);
+        const rev = data.rows.filter(r => REV.has(r.iyms)), unk = data.rows.filter(r=>r.iyms==="?").length;
+        log(`  ${data.rows.length} maç, ${rev.length} dönüş` + (unk ? `, ${unk} maçın devre skoru yok` : ""));
+        rev.forEach(r => bRows.push({...r, sezon:s, ligAd: LIG_AD[lig]}));
+        renderFinder();
+      } catch(e){ log(`  Hata: ${e.message}`); failed.push(`${LIG_AD[lig]} ${s}`); }
+    }
+    status(`Bitti: ${bRows.length} dönüş bulundu.` + (failed.length ? ` Alınamayan: ${failed.join(", ")}` : ""));
+    refreshSeasons();
+  });
+};
+
+/* ============================================================ ANALİZ */
+let aRows = [], aMode = null, aEsik = 3, aMetric = "isaret", aNames = {};
+const FILTERS = {
+  scan: [["all","Bütün kalan maçlar"],["hi","Sadece eşik üstü"]],
+  bt: [["revs","Test sezonundaki bütün dönüşler"],["hi","Eşik üstü maçların hepsi"],["hiRev","Sadece eşik üstü olup dönenler"]]
+};
+const SORTS = [["tarih+","Tarih (eski → yeni)"],["tarih-","Tarih (yeni → eski)"],["val","İşaret / değer (çok → az)"],["lig","Lig"]];
+function setOptions(sel, opts, keep){ const old = sel.value; sel.innerHTML = opts.map(([v,t])=>`<option value="${v}">${t}</option>`).join(""); if (keep && opts.some(o=>o[0]===old)) sel.value = old; }
+function renderAnalysis(){
+  const f = $("a-filter").value, sort = $("a-sort").value;
+  let rows = aRows;
+  if (aMode === "scan"){ if (f === "hi") rows = rows.filter(r => r.val >= aEsik); }
+  else { if (f === "revs") rows = rows.filter(r=>r.dondu); else if (f === "hi") rows = rows.filter(r=>r.val>=aEsik); else rows = rows.filter(r=>r.val>=aEsik && r.dondu); }
+  rows = [...rows];
+  if (sort === "tarih+") rows.sort((a,b)=>a.m.tarih.localeCompare(b.m.tarih));
+  else if (sort === "tarih-") rows.sort((a,b)=>b.m.tarih.localeCompare(a.m.tarih));
+  else if (sort === "val") rows.sort((a,b)=>b.val-a.val || a.m.tarih.localeCompare(b.m.tarih));
+  else rows.sort((a,b)=>(LIG_AD[a.m.lig]+a.m.tarih).localeCompare(LIG_AD[b.m.lig]+b.m.tarih));
+  $("a-count").textContent = `${rows.length} maç · karta dokununca işaretleri görürsün`;
+  const lbl = aMetric === "isaret" ? "işaret" : "farklı ezeli";
+  renderList($("a-list"), rows, r => {
+    const m = r.m, played = aMode === "bt";
+    const cls = played ? (r.dondu ? (m.iyms==="2/1"?"r21":"r12") : (r.val>=aEsik?"hi":"")) : (r.val>=aEsik?"hi":"");
+    const sc = played ? `${m.iy_ev}-${m.iy_dep} / ${m.ms_ev}-${m.ms_dep}` : "–";
+    const det = r.items.length ? `<ol>${r.items.map(it=>`<li>${describe(it)}</li>`).join("")}</ol>` : "Bu maç için işaret yok.";
+    return `<div class="m ${cls}" onclick="this.classList.toggle('open')">
+      <div class="top"><span>${m.tarih} · ${esc(LIG_AD[m.lig])}</span><span><span class="tag">${r.val} ${lbl}</span>${played ? ` <span class="tag ${r.dondu?(m.iyms==="2/1"?"g":"b"):""}">${m.iyms}${r.dondu?" ✔":""}</span>`:""}</span></div>
+      <div class="teams"><span>${esc(m.ev)}</span><span class="sc">${sc}</span><span class="a">${esc(m.dep)}</span></div>
+      <div class="det">${det}<p class="k" style="margin:6px 0 0">aralarında: iki takım · X→Y: ev sahibi, deplasmanın ezelisiyle · Y→X: deplasman, ev sahibinin ezelisiyle</p></div>
+    </div>`; });
+}
+$("a-filter").onchange = renderAnalysis; $("a-sort").onchange = renderAnalysis;
+function analysisInputs(){
+  const seasons = parseSeasons($("a-sez").value);
+  const v = $("a-lig").value; aEsik = Math.max(1, parseInt($("a-esik").value,10) || 3); aMetric = $("a-met").value;
+  return {seasons, leagues: v === "*" ? LIGLER.map(x=>x[0]) : [v]};
+}
+$("a-scan").onclick = () => {
+  let inp; try { inp = analysisInputs(); } catch(e){ status(e.message); return; }
+  runTask("Fikstür taranıyor…", async () => {
+    const out = [];
+    for (const lig of inp.leagues){
+      const L = await loadLeague(lig, inp.seasons); if (!L) continue;
+      const revs = L.played.filter(r => REV.has(r.iyms));
+      for (const f of L.fixtures){ const s = signals(f.h, f.a, f.tarih, revs, L.rivals); out.push({m:f, items:s.items, val: aMetric==="isaret" ? s.items.length : s.farkli}); }
+    }
+    aRows = out; aMode = "scan";
+    setOptions($("a-filter"), FILTERS.scan); setOptions($("a-sort"), SORTS); $("a-sort").value = "tarih+";
+    $("a-sumcard").style.display = "none"; $("a-out").style.display = "";
+    renderAnalysis();
+    const hi = out.filter(r=>r.val>=aEsik).length;
+    status(`Fikstür: ${out.length} maç tarandı, ${hi} maçta ${aEsik}+ ${aMetric==="isaret"?"işaret":"farklı ezeli"} var.`);
+  });
+};
+$("a-bt").onclick = () => {
+  let inp, tests; try { inp = analysisInputs(); tests = parseSeasons($("a-test").value); } catch(e){ status(e.message); return; }
+  if (!tests.every(t=>inp.seasons.includes(t))){ status("Test sezonları veri sezonlarının içinde olmalı."); return; }
+  runTask("Geriye dönük test yapılıyor…", async () => {
+    const rows = []; const used = [];
+    for (const lig of inp.leagues){
+      const L = await loadLeague(lig, inp.seasons); if (!L) continue; used.push(LIG_AD[lig]);
+      const revs = L.played.filter(r => REV.has(r.iyms));
+      for (const m of L.played){
+        if (!tests.includes(m.sezon) || m.iyms === "?" || !m.iyms) continue;
+        const s = signals(m.h, m.a, m.tarih, revs, L.rivals);
+        rows.push({m, items:s.items, val: aMetric==="isaret" ? s.items.length : s.farkli, dondu: REV.has(m.iyms)});
+      }
+    }
+    const b = {}; rows.forEach(r => { const k = Math.min(r.val,5); b[k] = b[k] || [0,0]; b[k][0]++; b[k][1] += r.dondu; });
+    const total = rows.length, hits = rows.filter(r=>r.dondu).length, base = total ? hits/total*100 : 0;
+    const hi = rows.filter(r=>r.val>=aEsik), hh = hi.filter(r=>r.dondu).length;
+    const revsT = rows.filter(r=>r.dondu), w1 = revsT.filter(r=>r.val>=1).length, we = revsT.filter(r=>r.val>=aEsik).length;
+    const pct = (d,n) => n ? (d/n*100).toFixed(1)+"%" : "–";
+    $("a-sum").innerHTML = `
+      <div class="k" style="margin-bottom:6px">${esc(used.length<4?used.join(", "):used.length+" lig")} · Test: ${tests.join(", ")} · ${aMetric==="isaret"?"Toplam işaret":"Farklı ezeli"} · Eşik ${aEsik}+</div>
+      <table class="sum"><tr><th>Değer</th><th>Maç</th><th>Dönüş</th><th>Oran</th></tr>
+      ${Object.keys(b).sort((x,y)=>x-y).map(k=>`<tr><td>${k}${k==5?"+":""}</td><td>${b[k][0]}</td><td>${b[k][1]}</td><td>${pct(b[k][1],b[k][0])}</td></tr>`).join("")}
+      <tr class="tot"><td>Toplam</td><td>${total}</td><td>${hits}</td><td>${pct(hits,total)}</td></tr></table>
+      <p style="margin:10px 0 4px"><b>Eşik üstü (${aEsik}+):</b> ${hi.length} maç, ${hh} dönüş = <b>${pct(hh,hi.length)}</b> (genel ortalama ${base.toFixed(1)}%)</p>
+      ${revsT.length ? `<p style="margin:4px 0">Dönüşlerin gözünden: ${revsT.length} dönüşün ${w1} tanesinde maçtan önce en az 1 işaret vardı, ${we} tanesinde ${aEsik}+ vardı, ${revsT.length-w1} tanesi işaretsiz geldi.</p>` : ""}
+      ${hi.length && hi.length < 40 ? `<p class="k" style="margin:4px 0 0">Not: eşik üstü maç sayısı az, oran tesadüften kolay etkilenir. Daha çok sezon ekle.</p>` : ""}`;
+    aRows = rows; aMode = "bt";
+    setOptions($("a-filter"), FILTERS.bt); setOptions($("a-sort"), SORTS); $("a-sort").value = "tarih+";
+    $("a-sumcard").style.display = ""; $("a-out").style.display = "";
+    renderAnalysis();
+    status(`Test bitti: eşik üstü ${hi.length} maçın ${hh}'i döndü (genel ortalama %${base.toFixed(1)}).`);
+  });
+};
+
+/* ============================================================ VERİ */
+async function refreshSeasons(){
+  const keys = await store.keys("season|");
+  const by = {};
+  for (const k of keys){ const [,lig,s] = k.split("|"); (by[lig] = by[lig] || []).push(+s); }
+  const el = $("v-seasons");
+  if (!keys.length){ el.innerHTML = `<span class="k">Henüz kayıtlı sezon yok. Bulucu'dan indir ya da aşağıdan CSV aktar.</span>`; return; }
+  const ranges = a => { a.sort((x,y)=>x-y); const out=[]; let s=a[0],p=a[0];
+    for (const y of a.slice(1).concat([null])){ if (y===p+1){p=y;continue;} out.push(s===p?`${s}`:`${s}–${p}`); s=p=y; } return out.join(", "); };
+  el.innerHTML = LIGLER.filter(([k])=>by[k]).map(([k,a]) => `<div><span>${esc(a)}</span><span class="k">${ranges(by[k])}</span></div>`).join("")
+    + ((await store.memoryOnly) ? `<p class="err">Bu tarayıcı kalıcı depolamaya izin vermiyor; veriler sayfa kapanınca silinir. Uygulamayı Chrome/Safari'de normal (gizli olmayan) sekmede aç.</p>` : "");
+}
+function parseCSV(text){
+  text = text.replace(/^﻿/, "");
+  const rows = []; let row = [], f = "", q = false;
+  for (let i=0;i<text.length;i++){
+    const c = text[i];
+    if (q){ if (c === '"'){ if (text[i+1] === '"'){ f+='"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true;
+    else if (c === ","){ row.push(f); f=""; }
+    else if (c === "\n" || c === "\r"){ if (c==="\r" && text[i+1]==="\n") i++; row.push(f); f=""; if (row.some(x=>x!=="")) rows.push(row); row=[]; }
+    else f += c;
+  }
+  row.push(f); if (row.some(x=>x!=="")) rows.push(row);
+  const head = rows.shift() || [];
+  return rows.map(r => Object.fromEntries(head.map((h,i)=>[h.trim(), r[i] ?? ""])));
+}
+$("v-csvbtn").onclick = () => $("v-csv").click();
+$("v-csv").onchange = e => {
+  const files = [...e.target.files]; e.target.value = "";
+  if (!files.length) return;
+  runTask(`${files.length} dosya aktarılıyor…`, async () => {
+    const groups = {}; const skipped = [];
+    for (const f of files){
+      const m = /([a-z]{3}\.\d)_(\d{4})_(tum_maclar|fikstur)\.csv$/i.exec(f.name);
+      if (!m){ skipped.push(f.name); continue; }
+      const k = `${m[1].toLowerCase()}|${m[2]}`; (groups[k] = groups[k] || {})[m[3]] = await f.text();
+    }
+    const num = v => (v === "" || v == null || v === "None") ? null : parseInt(v,10);
+    let n = 0;
+    for (const [k, g] of Object.entries(groups)){
+      const [lig, s] = k.split("|");
+      const old = await store.get(`season|${lig}|${s}`);
+      const rows = g.tum_maclar ? parseCSV(g.tum_maclar).map(r => finish({id:r.id, tarih:r.tarih, ev:r.ev, dep:r.dep,
+          iy_ev:num(r.iy_ev), iy_dep:num(r.iy_dep), ms_ev:num(r.ms_ev), ms_dep:num(r.ms_dep)})) : (old?.rows || []);
+      const fixtures = g.fikstur ? parseCSV(g.fikstur).map(r=>({id:r.id, tarih:r.tarih, ev:r.ev, dep:r.dep})) : (old?.fixtures || []);
+      await saveSeason(lig, +s, {rows, fixtures}); n++;
+      log(`  ${lig} ${s}: ${rows.length} maç, ${fixtures.length} fikstür aktarıldı`);
+    }
+    if (skipped.length) log("  Tanınmayan dosya adları atlandı: " + skipped.join(", "));
+    status(`${n} sezon aktarıldı.` + (skipped.length ? ` ${skipped.length} dosya atlandı.` : ""));
+    refreshSeasons();
+  });
+};
+$("v-exp").onclick = () => runTask("Yedek hazırlanıyor…", async () => {
+  const out = {surum:1, tarih:new Date().toISOString(), sezonlar:{}, ezeli:{}};
+  for (const k of await store.keys("season|")) out.sezonlar[k.slice(7)] = await store.get(k);
+  for (const k of await store.keys("rivals|")) out.ezeli[k.slice(7)] = await store.get(k);
+  const blob = new Blob([JSON.stringify(out)], {type:"application/json"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `iyms_yedek_${todayStr()}.json`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+  status(`Yedek indirildi (${Object.keys(out.sezonlar).length} sezon).`);
+});
+$("v-impbtn").onclick = () => $("v-imp").click();
+$("v-imp").onchange = e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  runTask("Yedek geri yükleniyor…", async () => {
+    const d = JSON.parse(await f.text());
+    for (const [k,v] of Object.entries(d.sezonlar||{})) await store.set("season|"+k, v);
+    for (const [k,v] of Object.entries(d.ezeli||{})) await store.set("rivals|"+k, v);
+    status(`${Object.keys(d.sezonlar||{}).length} sezon geri yüklendi.`); refreshSeasons();
+  });
+};
+$("v-clear").onclick = async () => {
+  if (!confirm("Telefondaki bütün sezon verisi ve ezeli listesi düzenlemelerin silinecek. Emin misin?")) return;
+  await store.clear(); status("Bütün veri silindi."); refreshSeasons(); loadRivalsEditor();
+};
+async function loadRivalsEditor(){ $("r-text").value = await rivalsText($("r-lig").value); }
+$("r-lig").onchange = loadRivalsEditor;
+$("r-save").onclick = async () => { await store.set(`rivals|${$("r-lig").value}`, $("r-text").value.trimEnd() + "\n"); status(`Ezeli rakipler kaydedildi (${LIG_AD[$("r-lig").value]}).`); };
+$("r-reset").onclick = async () => { if (!confirm("Soccerwiki listesine geri dönülsün mü?")) return;
+  await store.del(`rivals|${$("r-lig").value}`); loadRivalsEditor(); status("Varsayılan liste geri yüklendi."); };
+
+/* ============================================================ başlangıç */
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on", x===b));
+  document.querySelectorAll("main section").forEach(s=>s.classList.toggle("on", s.id===b.dataset.s));
+  if (b.dataset.s === "s-veri") refreshSeasons();
+  window.scrollTo(0,0);
+});
+fillLeagueSelect($("b-lig"), true); fillLeagueSelect($("a-lig"), true); fillLeagueSelect($("r-lig"), false);
+try { for (const id of ["b-lig","b-sez","a-lig","a-sez","a-met","a-esik","a-test"]){ const v = localStorage.getItem("iyms:"+id); if (v != null) $(id).value = v;
+  $(id).addEventListener("change", () => { try { localStorage.setItem("iyms:"+id, $(id).value); } catch(e){} }); } } catch(e){}
+loadRivalsEditor(); store.persistent();
+log("Uygulama hazır. Veri ESPN'den telefonun kendi internetiyle çekilir ve telefonda saklanır.");
+</script>
+</body>
+</html>
